@@ -43,37 +43,38 @@ namespace FesteLOC
 
                 var headers = new Dictionary<string, string>(req.Headers.Count);
                 foreach (var key in req.Headers.AllKeys)
+                {
                     headers.Add(key, req.Headers[key]);
+                }
 
                 var reqData = new byte[req.ContentLength64];
                 req.InputStream.Read(reqData, 0, reqData.Length);
 
-                //if (req.HttpMethod == "GET")
-                {
-                    await OnRequest(headers, req.Url, reqData, context.Response, req.HttpMethod);
-                }
+                await OnRequest(headers, req.Url, reqData, context.Response, req.HttpMethod);
 
-                await Task.Delay(50);
+                await Task.Delay(5);
             }
         }
 
         private async Task OnRequest(Dictionary<string, string> headers, Uri uri, byte[] reqData, HttpListenerResponse resp, string method)
         {
+            Console.Out.WriteLine($"Captured request to [{uri}]");
             //PrintRequest(headers, uri, reqData);
             var masterData = await ForwardRequest(headers, uri, reqData, method);
 
             if (masterData != null)
             {
-                if (uri.PathAndQuery == "/apiext/texts?locale=ja_JP")
-                {
-
-                }
-
                 resp.Headers.Clear();
                 foreach (var header in masterData.Headers)
                 {
                     if (header.Key == "Content-Type")
+                    {
                         resp.ContentType = header.Value.ToString();
+                    }
+                    else if (header.Key == "Connection")
+                    {
+                        resp.KeepAlive = header.Value.First() == "keep-alive" ? true : false;
+                    }
                     else
                     {
                         resp.AddHeader(header.Key, header.Value.First());
@@ -82,24 +83,31 @@ namespace FesteLOC
                     Debug.WriteLine($"{header.Key}: {header.Value.First()}");
                 }
 
+                resp.StatusCode = (int)masterData.StatusCode;
+
                 var respData = masterData.Content.ReadAsByteArrayAsync().Result;
-                resp.ContentLength64 = respData.Length;
-                resp.ContentType     = masterData.Content.Headers.ContentType.MediaType;
-                resp.StatusCode      = (int)masterData.StatusCode;
-                resp.SendChunked     = masterData.Headers.TransferEncodingChunked ?? false;
+                if (uri.PathAndQuery == "/apiext/texts?locale=ja_JP" && File.Exists("loc.json"))
+                {
+                    Console.Out.WriteLine($"Request content detected to be overriden with local data file");
+                    respData = File.ReadAllBytes("loc.json");
+                }
+
                 resp.OutputStream.Write(respData);
+
                 resp.OutputStream.Flush();
                 resp.OutputStream.Close();
-
-                //resp.Headers.Clear();
+                Console.Out.WriteLine($"Sent response for [{uri}]");
+                return;
             }
+
+            Console.Out.WriteLine($"ERROR: masterData was null for [{uri}]!!!");
         }
 
         private async Task<HttpResponseMessage> ForwardRequest(Dictionary<string, string> headers, Uri uri, byte[] reqData, string method)
         {
             var reqMsg = new HttpRequestMessage
             {
-                Method     = method == "GET" ? HttpMethod.Get : HttpMethod.Post,
+                Method     = new HttpMethod(method),
                 RequestUri = new Uri($"{Cfg.MasterDataURL}{uri.PathAndQuery}"),
                 Headers    = { },
                 Content    = new ByteArrayContent(reqData)
@@ -115,14 +123,18 @@ namespace FesteLOC
             }
 
             if (headers.TryGetValue("Content-Type", out string contentType))
+            {
                 reqMsg.Content.Headers.Add("Content-Type", contentType);
+            }
 
             try
             {
                 var response = await HttpClient.SendAsync(reqMsg);
 
                 if (method == "GET")
-                    SaveDecryptedData(response);
+                {
+                    SaveResponseData(response);
+                }
 
                 return response;
             }
@@ -134,25 +146,67 @@ namespace FesteLOC
             return null;
         }
 
-        private void SaveDecryptedData(HttpResponseMessage resp)
+        private void SaveResponseData(HttpResponseMessage resp)
         {
-            if (!Cfg.SaveDecryptedData)
+            if (!Cfg.SaveServerData)
+            {
                 return;
+            }
 
-            var path = Path.Combine(Cfg.DecryptedDir, resp.Headers.Date.Value.ToString("yyyy_MM_dd-HH_mm_ss"), $"{resp.RequestMessage.RequestUri.AbsolutePath.TrimStart('/', '\\')}.json");
+            var pathVersioned = Path.Combine(Cfg.SaveDataDir, resp.RequestMessage.RequestUri.AbsolutePath.TrimStart('/', '\\'), resp.Headers.Date.Value.ToString("yyyy_MM_dd-HH_mm_ss"), $"{Path.GetFileName(resp.RequestMessage.RequestUri.AbsolutePath)}.json");
+            
+            // Only save files that don't already exist for this version
+            if (!File.Exists(pathVersioned))
+            {
+                SaveData(pathVersioned, resp);
+            }
+            
+            bool saveLatest = true;
+            if (saveLatest)
+            {
+                var pathLatest = Path.Combine(Cfg.SaveDataDir, "latest", $"{resp.RequestMessage.RequestUri.AbsolutePath.TrimStart('/', '\\')}.json");
+                SaveData(pathLatest, resp);
+            }
+        }
+
+        private void SaveData(string path, HttpResponseMessage resp)
+        {
             Directory.CreateDirectory(Path.GetDirectoryName(path));
 
+            if (Cfg.SaveDecryptedData)
+            {
+                SaveDecryptedData(path, resp);
+                Console.Out.WriteLine($"Saved decrypted data to {path.Replace(Cfg.SaveDataDir, "")}");
+            }
+            else
+            {
+                string encryptedFilePath = string.Concat(Path.ChangeExtension(path, ""), "_enc.bin");
+                File.WriteAllText(encryptedFilePath, Encoding.UTF8.GetString(resp.Content.ReadAsByteArrayAsync().Result));
+                Console.Out.WriteLine($"Saved encrypted data to {encryptedFilePath.Replace(Cfg.SaveDataDir, "")}");
+            }
+        }
+
+        private void SaveDecryptedData(string path, HttpResponseMessage resp)
+        {
             var data = DecryptResp(resp);
             var niceJson = JsonSerializer.Serialize(JsonDocument.Parse(data), new JsonSerializerOptions
             {
-                WriteIndented = true
+                WriteIndented = true,
+                Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
             });
             File.WriteAllText(path, niceJson);
         }
 
         private string DecryptResp(HttpResponseMessage resp)
         {
-            var iv        = Convert.FromBase64String(resp.Headers.GetValues("x-amz-meta-x-sb-iv").FirstOrDefault());
+            var iv_header = resp.Headers.FirstOrDefault(header => header.Key.EndsWith("x-sb-iv", StringComparison.CurrentCultureIgnoreCase));
+
+            if (iv_header.Key == null)
+            {
+                return "";
+            }
+
+            var iv        = Convert.FromBase64String(iv_header.Value.FirstOrDefault());
             var data      = resp.Content.ReadAsByteArrayAsync().Result;
             var dataStr   = Encoding.UTF8.GetString(data);
             var decrypted = AES.Decrypt(Convert.FromBase64String(dataStr), Convert.FromHexString(Cfg.AESKey), iv);
@@ -165,7 +219,9 @@ namespace FesteLOC
             Debug.WriteLine("---- Request ----");
             Debug.WriteLine($"Url Path: {uri.PathAndQuery}");
             foreach (var header in headers)
+            {
                 Debug.WriteLine($"{header.Key}: {header.Value}");
+            }
         }
     }
 }
