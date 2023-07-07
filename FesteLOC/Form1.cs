@@ -49,7 +49,7 @@ namespace FesteLOC
 
         private void LoadLocalizationOptions()
         {
-            string LocalizationDirectory = Path.Combine(Cfg.OverrideDir, "Localisations");
+            string LocalizationDirectory = Path.Combine(Cfg.OverrideDir, "Localizations");
             if (Directory.Exists(LocalizationDirectory))
             {
                 var dirList = Directory.GetDirectories(LocalizationDirectory);

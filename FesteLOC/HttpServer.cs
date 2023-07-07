@@ -82,6 +82,7 @@ namespace FesteLOC
                 resp.ContentType = masterData.Content.Headers.ContentType?.MediaType ?? resp.ContentType;
                 resp.Headers.Set(HttpResponseHeader.LastModified, masterData.Content.Headers.LastModified?.DateTime.ToString("r"));
                 resp.Headers.Set(HttpResponseHeader.Server, ""); // http listen will always add its silly string onto this unless its empty
+                resp.Headers.Set(HttpResponseHeader.Date, masterData.Headers.Date?.ToString("r") ?? resp.Headers["Date"]);
 
 
                 var respData = masterData.Content.ReadAsByteArrayAsync().Result;
@@ -148,7 +149,7 @@ namespace FesteLOC
             return null;
         }
 
-        private string GetLocFilePath() => Path.Combine(Cfg.OverrideDir, "Localisations", Cfg.LocalizationStr, $"loc.json");
+        private string GetLocFilePath() => Path.Combine(Cfg.OverrideDir, "Localizations", Cfg.LocalizationStr, $"loc.json");
 
         private byte[] LoadTranslation()
         {
