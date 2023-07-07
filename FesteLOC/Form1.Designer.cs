@@ -130,12 +130,12 @@
             // LocalizationComboBox
             // 
             LocalizationComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
-            LocalizationComboBox.Enabled = false;
             LocalizationComboBox.FormattingEnabled = true;
             LocalizationComboBox.Location = new Point(167, 157);
             LocalizationComboBox.Name = "LocalizationComboBox";
             LocalizationComboBox.Size = new Size(200, 23);
             LocalizationComboBox.TabIndex = 10;
+            LocalizationComboBox.SelectedIndexChanged += LocalizationComboBox_SelectedIndexChanged;
             // 
             // DecryptSaveDataLabel
             // 

@@ -9,6 +9,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Unicode;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace FesteLOC
@@ -50,9 +51,7 @@ namespace FesteLOC
                 var reqData = new byte[req.ContentLength64];
                 req.InputStream.Read(reqData, 0, reqData.Length);
 
-                await OnRequest(headers, req.Url, reqData, context.Response, req.HttpMethod);
-
-                await Task.Delay(5);
+                OnRequest(headers, req.Url, reqData, context.Response, req.HttpMethod);
             }
         }
 
@@ -67,11 +66,7 @@ namespace FesteLOC
                 resp.Headers.Clear();
                 foreach (var header in masterData.Headers)
                 {
-                    if (header.Key == "Content-Type")
-                    {
-                        resp.ContentType = header.Value.ToString();
-                    }
-                    else if (header.Key == "Connection")
+                    if (header.Key == "Connection")
                     {
                         resp.KeepAlive = header.Value.First() == "keep-alive" ? true : false;
                     }
@@ -84,12 +79,19 @@ namespace FesteLOC
                 }
 
                 resp.StatusCode = (int)masterData.StatusCode;
+                resp.ContentType = masterData.Content.Headers.ContentType?.MediaType ?? resp.ContentType;
+                resp.Headers.Set(HttpResponseHeader.LastModified, masterData.Content.Headers.LastModified?.DateTime.ToString("r"));
+                resp.Headers.Set(HttpResponseHeader.Server, ""); // http listen will always add its silly string onto this unless its empty
+
 
                 var respData = masterData.Content.ReadAsByteArrayAsync().Result;
-                if (uri.PathAndQuery == "/apiext/texts?locale=ja_JP" && File.Exists("loc.json"))
+                if (uri.PathAndQuery == "/apiext/texts?locale=ja_JP" && File.Exists(GetLocFilePath()))
                 {
                     Console.Out.WriteLine($"Request content detected to be overriden with local data file");
-                    respData = File.ReadAllBytes("loc.json");
+                    respData = LoadTranslation();
+                    resp.Headers.Remove("x-amz-meta-x-sb-iv");
+                    resp.Headers.Remove("x-amz-meta-x-sb-rawdatasize");
+                    resp.Headers.Remove("x-amz-server-side-encryption");
                 }
 
                 resp.OutputStream.Write(respData);
@@ -144,6 +146,15 @@ namespace FesteLOC
             }
 
             return null;
+        }
+
+        private string GetLocFilePath() => Path.Combine(Cfg.OverrideDir, "Localisations", Cfg.LocalizationStr, $"loc.json");
+
+        private byte[] LoadTranslation()
+        {
+            var path = GetLocFilePath();
+            var text = File.ReadAllBytes(path);
+            return text;
         }
 
         private void SaveResponseData(HttpResponseMessage resp)

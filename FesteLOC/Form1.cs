@@ -25,7 +25,9 @@ namespace FesteLOC
             this.BackColor = Color.FromArgb(255, 30, 30, 30);
             DarkTheme.ApplyTheme_Dark(this);
 
-            ResetLocalizationOptions();
+            //ResetLocalizationOptions();
+            LoadLocalizationOptions();
+            SetSelectedLocalization(Cfg.LocalizationStr ?? "en");
 
             Console.Out.WriteLine("Http Server initializing...");
             HttpServ.Init(Cfg);
@@ -39,15 +41,22 @@ namespace FesteLOC
             LocalizationComboBox.SelectedIndex = 0;
         }
 
+        private void SetSelectedLocalization(string name)
+        {
+            var idx = LocalizationComboBox.Items.IndexOf(name);
+            LocalizationComboBox.SelectedIndex = idx;
+        }
+
         private void LoadLocalizationOptions()
         {
-            string LocalizationDirectory = Path.Combine(OverrideDataDirectoryTB.Text, "apiext\\texts");
+            string LocalizationDirectory = Path.Combine(Cfg.OverrideDir, "Localisations");
             if (Directory.Exists(LocalizationDirectory))
             {
-                var fileList = Directory.EnumerateFiles(LocalizationDirectory);
-                foreach (var file in fileList)
+                var dirList = Directory.GetDirectories(LocalizationDirectory);
+                foreach (var dir in dirList)
                 {
-                    LocalizationComboBox.Items.Add(Path.GetFileName(file));
+                    var name = Path.GetFileName(dir);
+                    LocalizationComboBox.Items.Add(Path.GetFileName(name));
                 }
             }
         }
@@ -108,6 +117,11 @@ namespace FesteLOC
             Cfg.LocalizationStr = LocalizationComboBox.Text;
             Cfg.AESKey = AESKeyTB.Text;
             Cfg.SaveDecryptedData = DecryptSaveDataCheckBox.Checked;
+        }
+
+        private void LocalizationComboBox_SelectedIndexChanged(object sender, EventArgs e)
+        {
+
         }
     }
 }

@@ -13,7 +13,7 @@ namespace FesteLOC
         public string OverrideDir     = "";
         public bool SaveServerData    = false;
         public string SaveDataDir     = "";
-        public string LocalizationStr = "";
+        public string LocalizationStr = "en";
         public string AESKey          = "";
         public bool SaveDecryptedData = false;
     }
