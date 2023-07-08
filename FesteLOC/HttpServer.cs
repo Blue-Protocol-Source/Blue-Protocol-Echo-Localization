@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Http.Headers;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -21,11 +22,20 @@ namespace FesteLOC
         private HttpListener HttpHandler;
         private Task HttpListenTask;
         private Config Cfg;
-        static readonly HttpClient HttpClient = new HttpClient(new HttpClientHandler()
+        static readonly HttpClient HttpClient;
+
+        static HttpServer()
         {
-            AllowAutoRedirect      = true,
-            AutomaticDecompression = DecompressionMethods.All
-        });
+            Environment.SetEnvironmentVariable("DOTNET_SYSTEM_NET_DISABLEIPV6", "1");
+
+            HttpClient = new HttpClient(new HttpClientHandler()
+            {
+                AllowAutoRedirect = true,
+                AutomaticDecompression = DecompressionMethods.All,
+                UseProxy = true,
+                Proxy = WebRequest.GetSystemWebProxy(),
+            });
+        }
 
         public void Init(Config cfg)
         {
@@ -35,6 +45,15 @@ namespace FesteLOC
             HttpHandler.Start();
 
             HttpListenTask = Task.Factory.StartNew(ListenForRequest, TaskCreationOptions.LongRunning);
+        }
+
+        // Temp
+        public string GetIP()
+        {
+            var url = "https://api.ipify.org/?format=json";
+            var data = HttpClient.GetStringAsync(url).Result;
+
+            return data;
         }
 
         private async void ListenForRequest()

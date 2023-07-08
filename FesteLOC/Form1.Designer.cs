@@ -51,6 +51,8 @@
             SaveDataNoteLabel = new Label();
             SaveIncomingDataCheckBox = new CheckBox();
             SaveIncomingDataLabel = new Label();
+            CheckIPbtn = new Button();
+            IPLbl = new Label();
             DebugLogGroupBox.SuspendLayout();
             SettingsGroupBox.SuspendLayout();
             AdvancedSettingsGroupBox.SuspendLayout();
@@ -184,6 +186,8 @@
             // 
             // SettingsGroupBox
             // 
+            SettingsGroupBox.Controls.Add(IPLbl);
+            SettingsGroupBox.Controls.Add(CheckIPbtn);
             SettingsGroupBox.Controls.Add(ApplySettingsBtn);
             SettingsGroupBox.Controls.Add(ShowAdvancedSettingsLabel);
             SettingsGroupBox.Controls.Add(ShowAdvancedSettingsCheckBox);
@@ -302,6 +306,25 @@
             SaveIncomingDataLabel.Text = "Save Incoming Data To File :";
             SaveIncomingDataLabel.TextAlign = ContentAlignment.MiddleLeft;
             // 
+            // CheckIPbtn
+            // 
+            CheckIPbtn.Location = new Point(215, 189);
+            CheckIPbtn.Name = "CheckIPbtn";
+            CheckIPbtn.Size = new Size(75, 23);
+            CheckIPbtn.TabIndex = 15;
+            CheckIPbtn.Text = "Check IP";
+            CheckIPbtn.UseVisualStyleBackColor = true;
+            CheckIPbtn.Click += CheckIPbtn_Click;
+            // 
+            // IPLbl
+            // 
+            IPLbl.AutoSize = true;
+            IPLbl.Location = new Point(309, 193);
+            IPLbl.Name = "IPLbl";
+            IPLbl.Size = new Size(38, 15);
+            IPLbl.TabIndex = 16;
+            IPLbl.Text = "label1";
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -349,5 +372,7 @@
         private CheckBox ShowAdvancedSettingsCheckBox;
         private Label ShowAdvancedSettingsLabel;
         private Button ApplySettingsBtn;
+        private Button CheckIPbtn;
+        private Label IPLbl;
     }
 }

@@ -124,5 +124,11 @@ namespace FesteLOC
         {
 
         }
+
+        private void CheckIPbtn_Click(object sender, EventArgs e)
+        {
+            var ip = HttpServ.GetIP();
+            IPLbl.Text = ip;
+        }
     }
 }
