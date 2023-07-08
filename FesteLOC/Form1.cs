@@ -49,7 +49,7 @@ namespace FesteLOC
 
         private void LoadLocalizationOptions()
         {
-            string LocalizationDirectory = Path.Combine(Cfg.OverrideDir, "Localizations");
+            string LocalizationDirectory = Path.Combine(Cfg.OverrideDir.TrimEnd('/', '\\'), "Localizations");
             if (Directory.Exists(LocalizationDirectory))
             {
                 var dirList = Directory.GetDirectories(LocalizationDirectory);
@@ -64,6 +64,7 @@ namespace FesteLOC
         private void OverrideDataDirectoryTB_TextChanged(object sender, EventArgs e)
         {
             LocalizationComboBox.Enabled = OverrideDataDirectoryTB.Text.Length > 0 && Directory.Exists(OverrideDataDirectoryTB.Text);
+            Cfg.OverrideDir = OverrideDataDirectoryTB.Text;
 
             LoadLocalizationOptions();
         }

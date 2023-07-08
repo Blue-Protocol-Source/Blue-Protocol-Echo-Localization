@@ -10,6 +10,8 @@ using System.Text.Json.Serialization;
 using System.Text.Unicode;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using static FesteLOC.LocalizationFileLayout;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace FesteLOC
@@ -89,7 +91,17 @@ namespace FesteLOC
                 if (uri.PathAndQuery == "/apiext/texts?locale=ja_JP" && File.Exists(GetLocFilePath()))
                 {
                     Console.Out.WriteLine($"Request content detected to be overriden with local data file");
-                    respData = LoadTranslation();
+
+                    if (Cfg.AESKey != "")
+                    {
+                        var mergedLocData = MergeLocalizationData(DecryptResp(masterData), LoadTranslationString());
+                        respData = Encoding.UTF8.GetBytes(mergedLocData);
+                    }
+                    else
+                    {
+                        respData = LoadTranslation();
+                    }
+
                     resp.Headers.Remove("x-amz-meta-x-sb-iv");
                     resp.Headers.Remove("x-amz-meta-x-sb-rawdatasize");
                     resp.Headers.Remove("x-amz-server-side-encryption");
@@ -149,13 +161,49 @@ namespace FesteLOC
             return null;
         }
 
-        private string GetLocFilePath() => Path.Combine(Cfg.OverrideDir, "Localizations", Cfg.LocalizationStr, $"loc.json");
+        private string GetLocFilePath() => Path.Combine(Cfg.OverrideDir.TrimEnd('/', '\\'), "Localizations", Cfg.LocalizationStr, $"loc.json");
 
         private byte[] LoadTranslation()
         {
             var path = GetLocFilePath();
             var text = File.ReadAllBytes(path);
             return text;
+        }
+
+        private string LoadTranslationString()
+        {
+            var path = GetLocFilePath();
+            var text = File.ReadAllText(path);
+            return text;
+        }
+
+        private string MergeLocalizationData(string sourceLocData, string overrideLocData)
+        {
+            List<LocCategory> sourceData = JsonSerializer.Deserialize<List<LocCategory>>(sourceLocData);
+            List<LocCategory> updateData = JsonSerializer.Deserialize<List<LocCategory>>(overrideLocData);
+            foreach (var CategoryItem in updateData)
+            {
+                var matchedCategory = sourceData.FirstOrDefault(x => x.name == CategoryItem.name);
+                if (matchedCategory != null)
+                {
+                    foreach (var TextItem in CategoryItem.texts)
+                    {
+                        var matchedText = matchedCategory.texts.FirstOrDefault(x => x.id == TextItem.id);
+                        if (matchedText != null)
+                        {
+                            matchedText.text = TextItem.text;
+                        }
+                    }
+                }
+            }
+
+            var mergedData = JsonSerializer.Serialize(sourceData, new JsonSerializerOptions
+            {
+                WriteIndented = true,
+                Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+            });
+
+            return mergedData;
         }
 
         private void SaveResponseData(HttpResponseMessage resp)
