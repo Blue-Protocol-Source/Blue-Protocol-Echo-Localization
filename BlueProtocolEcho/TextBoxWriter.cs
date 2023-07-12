@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FesteLOC
+namespace BlueProtocolEcho
 {
     internal class TextBoxWriter : TextWriter
     {

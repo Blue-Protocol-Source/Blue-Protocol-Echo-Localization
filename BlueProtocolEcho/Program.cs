@@ -1,4 +1,4 @@
-namespace FesteLOC
+namespace BlueProtocolEcho
 {
     internal static class Program
     {

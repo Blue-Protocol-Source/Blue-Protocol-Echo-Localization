@@ -11,11 +11,11 @@ using System.Text.Json.Serialization;
 using System.Text.Unicode;
 using System.Threading.Tasks;
 using System.Xml.Linq;
-using static FesteLOC.LocalizationFileLayout;
+using static BlueProtocolEcho.LocalizationFileLayout;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
-namespace FesteLOC
+namespace BlueProtocolEcho
 {
     public class HttpServer
     {

@@ -1,7 +1,7 @@
 using System.Net;
 using System.Runtime.InteropServices;
 
-namespace FesteLOC
+namespace BlueProtocolEcho
 {
     public partial class Form1 : Form
     {
