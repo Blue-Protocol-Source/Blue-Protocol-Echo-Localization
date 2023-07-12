@@ -174,6 +174,11 @@ namespace Blue_Protocol_Echo_Localization
                 {
                     SaveResponseData(response);
                 }
+                else if (method == "POST")
+                {
+                    SaveResponsePostData(response);
+                    SavePostRequestData(reqData, response.RequestMessage.RequestUri.AbsolutePath, response.Headers.Date.Value);
+                }
 
                 return response;
             }
@@ -228,6 +233,108 @@ namespace Blue_Protocol_Echo_Localization
             });
 
             return mergedData;
+        }
+
+        private void SaveResponsePostData(HttpResponseMessage resp)
+        {
+            if (!Cfg.SaveServerData)
+            {
+                return;
+            }
+
+            var pathVersioned = Path.Combine(Cfg.SaveDataDir, "POST", resp.RequestMessage.RequestUri.AbsolutePath.TrimStart('/', '\\'), resp.Headers.Date.Value.ToString("yyyy_MM_dd-HH_mm_ss"), $"{Path.GetFileName(resp.RequestMessage.RequestUri.AbsolutePath)}.json");
+
+            // Only save files that don't already exist for this version
+            if (!File.Exists(pathVersioned))
+            {
+                SavePostData(pathVersioned, resp);
+            }
+
+            bool saveLatest = true;
+            if (saveLatest)
+            {
+                var pathLatest = Path.Combine(Cfg.SaveDataDir, "POST", "latest", $"{resp.RequestMessage.RequestUri.AbsolutePath.TrimStart('/', '\\')}.json");
+                SavePostData(pathLatest, resp);
+            }
+        }
+
+        private void SavePostData(string path, HttpResponseMessage resp)
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(path));
+
+            if (Cfg.SaveDecryptedData)
+            {
+                SaveDecryptedPostData(path, resp);
+                Console.Out.WriteLine($"Saved decrypted data to {path.Replace(Cfg.SaveDataDir, "")}");
+            }
+            else
+            {
+                string encryptedFilePath = string.Concat(Path.ChangeExtension(path, ""), "_enc.bin");
+                File.WriteAllText(encryptedFilePath, Encoding.UTF8.GetString(resp.Content.ReadAsByteArrayAsync().Result));
+                Console.Out.WriteLine($"Saved encrypted data to {encryptedFilePath.Replace(Cfg.SaveDataDir, "")}");
+            }
+        }
+
+        private void SaveDecryptedPostData(string path, HttpResponseMessage resp)
+        {
+            var data = DecryptPostResp(resp);
+            if (data.StartsWith('[') || data.StartsWith('{'))
+            {
+                var niceJson = JsonSerializer.Serialize(JsonDocument.Parse(data), new JsonSerializerOptions
+                {
+                    WriteIndented = true,
+                    Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+                });
+                File.WriteAllText(path, niceJson);
+            }
+            else
+            {
+                File.WriteAllText(path, data);
+            }
+        }
+
+        private void SavePostRequestData(byte[] reqData, string requestUriAbsolutePath, DateTimeOffset DateHeader)
+        {
+            if (!Cfg.SaveServerData)
+            {
+                return;
+            }
+
+            var pathVersioned = Path.Combine(Cfg.SaveDataDir, "POST", requestUriAbsolutePath.TrimStart('/', '\\'), DateHeader.ToString("yyyy_MM_dd-HH_mm_ss"), $"req-{Path.GetFileName(requestUriAbsolutePath)}.json");
+
+            // Only save files that don't already exist for this version
+            if (!File.Exists(pathVersioned))
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(pathVersioned));
+                File.WriteAllText(pathVersioned, Encoding.UTF8.GetString(reqData));
+                Console.Out.WriteLine($"Saved post request data to {pathVersioned.Replace(Cfg.SaveDataDir, "")}");
+            }
+
+            bool saveLatest = true;
+            if (saveLatest)
+            {
+                var pathLatest = Path.Combine(Cfg.SaveDataDir, "POST", "latest", $"req-{requestUriAbsolutePath.TrimStart('/', '\\')}.json");
+                Directory.CreateDirectory(Path.GetDirectoryName(pathLatest));
+                File.WriteAllText(pathLatest, Encoding.UTF8.GetString(reqData));
+                Console.Out.WriteLine($"Saved post request data to {pathVersioned.Replace(Cfg.SaveDataDir, "")}");
+            }
+        }
+
+        private string DecryptPostResp(HttpResponseMessage resp)
+        {
+            var iv_header = resp.Headers.FirstOrDefault(header => header.Key.EndsWith("x-sb-iv", StringComparison.CurrentCultureIgnoreCase));
+
+            if (iv_header.Key == null)
+            {
+                return Encoding.UTF8.GetString(resp.Content.ReadAsByteArrayAsync().Result);
+            }
+
+            var iv = Convert.FromBase64String(iv_header.Value.FirstOrDefault());
+            var data = resp.Content.ReadAsByteArrayAsync().Result;
+            var dataStr = Encoding.UTF8.GetString(data);
+            var decrypted = AES.Decrypt(Convert.FromBase64String(dataStr), Convert.FromHexString(Cfg.AESKey), iv);
+
+            return decrypted;
         }
 
         private void SaveResponseData(HttpResponseMessage resp)
