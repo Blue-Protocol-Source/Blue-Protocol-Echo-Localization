@@ -16,6 +16,8 @@ namespace Blue_Protocol_Echo_Localization
             TitleText = this.Text;
             Console.SetOut(new TextBoxWriter(DebugOutput));
 
+            //Cfg = Config.Load();
+
             HttpServ = new HttpServer();
         }
 
@@ -118,6 +120,8 @@ namespace Blue_Protocol_Echo_Localization
             Cfg.LocalizationStr = LocalizationComboBox.Text;
             Cfg.AESKey = AESKeyTB.Text;
             Cfg.SaveDecryptedData = DecryptSaveDataCheckBox.Checked;
+
+            //Cfg.Save();
         }
 
         private void LocalizationComboBox_SelectedIndexChanged(object sender, EventArgs e)
@@ -157,6 +161,11 @@ namespace Blue_Protocol_Echo_Localization
                     CheckIPbtn.Enabled = true;
                 });
             }
+        }
+
+        private void SettingsGroupBox_Enter(object sender, EventArgs e)
+        {
+
         }
     }
 }

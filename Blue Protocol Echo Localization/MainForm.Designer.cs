@@ -209,15 +209,16 @@
             SettingsGroupBox.TabIndex = 0;
             SettingsGroupBox.TabStop = false;
             SettingsGroupBox.Text = "Settings";
+            SettingsGroupBox.Enter += SettingsGroupBox_Enter;
             // 
             // IPLbl
             // 
             IPLbl.AutoSize = true;
             IPLbl.Location = new Point(557, 198);
             IPLbl.Name = "IPLbl";
-            IPLbl.Size = new Size(38, 15);
+            IPLbl.Size = new Size(58, 15);
             IPLbl.TabIndex = 16;
-            IPLbl.Text = "label1";
+            IPLbl.Text = "Unknown";
             // 
             // CheckIPbtn
             // 

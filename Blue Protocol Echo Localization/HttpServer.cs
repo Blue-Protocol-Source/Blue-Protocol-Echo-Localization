@@ -5,6 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Net;
 using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
@@ -50,15 +51,22 @@ namespace Blue_Protocol_Echo_Localization
 
         public async Task<string> GetRegion()
         {
-            var url    = "https://api.protonvpn.ch/vpn/location";
-            var region = await HttpClient.GetStringAsync(url).ContinueWith(async json =>
+            try
             {
-                var data   = JsonSerializer.Deserialize<RegionData>(await json);
-                var region = data.Country;
-                return region;
-            });
+                var url = "https://freeipapi.com/api/json";
+                var region = await HttpClient.GetFromJsonAsync<RegionData>(url).ContinueWith(async json =>
+                {
+                    var region = (await json).countryCode;
+                    return region;
+                });
 
-            return await region;
+                return region.Result;
+            }
+            catch (Exception ex)
+            {
+                Console.Out.WriteLine($"Error getting region: {ex}");
+                return "Error";
+            }
         }
 
         private async void ListenForRequest()
@@ -418,6 +426,6 @@ namespace Blue_Protocol_Echo_Localization
 
     public class RegionData
     {
-        public string Country { get; set; }
+        public string countryCode { get; set; }
     }
 }
