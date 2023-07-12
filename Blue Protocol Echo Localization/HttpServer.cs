@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Net;
 using System.Net.Http.Headers;
@@ -47,13 +48,17 @@ namespace Blue_Protocol_Echo_Localization
             HttpListenTask = Task.Factory.StartNew(ListenForRequest, TaskCreationOptions.LongRunning);
         }
 
-        // Temp
-        public string GetIP()
+        public async Task<string> GetRegion()
         {
-            var url = "https://api.ipify.org/?format=json";
-            var data = HttpClient.GetStringAsync(url).Result;
+            var url    = "https://api.protonvpn.ch/vpn/location";
+            var region = await HttpClient.GetStringAsync(url).ContinueWith(async json =>
+            {
+                var data   = JsonSerializer.Deserialize<RegionData>(await json);
+                var region = data.Country;
+                return region;
+            });
 
-            return data;
+            return await region;
         }
 
         private async void ListenForRequest()
@@ -302,5 +307,10 @@ namespace Blue_Protocol_Echo_Localization
                 Debug.WriteLine($"{header.Key}: {header.Value}");
             }
         }
+    }
+
+    public class RegionData
+    {
+        public string Country { get; set; }
     }
 }

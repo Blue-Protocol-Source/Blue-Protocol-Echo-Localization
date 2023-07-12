@@ -125,10 +125,38 @@ namespace Blue_Protocol_Echo_Localization
 
         }
 
-        private void CheckIPbtn_Click(object sender, EventArgs e)
+        private async void CheckIPbtn_Click(object sender, EventArgs e)
         {
-            var ip = HttpServ.GetIP();
-            IPLbl.Text = ip;
+            CheckIPbtn.Enabled = false;
+            try
+            {
+                await HttpServ.GetRegion().ContinueWith(async data =>
+                {
+                    var region = await data;
+                    this.Invoke(() =>
+                    {
+                        IPLbl.Text = region;
+                    });
+
+                    await Task.Delay(TimeSpan.FromSeconds(5));
+
+                    this.Invoke(() =>
+                    {
+                        CheckIPbtn.Enabled = true;
+                    });
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.Out.WriteLine($"Error Getting Region: {ex}");
+
+                await Task.Delay(TimeSpan.FromSeconds(5));
+
+                this.Invoke(() =>
+                {
+                    CheckIPbtn.Enabled = true;
+                });
+            }
         }
     }
 }

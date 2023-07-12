@@ -213,7 +213,7 @@
             // IPLbl
             // 
             IPLbl.AutoSize = true;
-            IPLbl.Location = new Point(309, 193);
+            IPLbl.Location = new Point(557, 198);
             IPLbl.Name = "IPLbl";
             IPLbl.Size = new Size(38, 15);
             IPLbl.TabIndex = 16;
@@ -221,11 +221,11 @@
             // 
             // CheckIPbtn
             // 
-            CheckIPbtn.Location = new Point(215, 189);
+            CheckIPbtn.Location = new Point(461, 194);
             CheckIPbtn.Name = "CheckIPbtn";
-            CheckIPbtn.Size = new Size(75, 23);
+            CheckIPbtn.Size = new Size(90, 23);
             CheckIPbtn.TabIndex = 15;
-            CheckIPbtn.Text = "Check IP";
+            CheckIPbtn.Text = "Check Region";
             CheckIPbtn.UseVisualStyleBackColor = true;
             CheckIPbtn.Click += CheckIPbtn_Click;
             // 
