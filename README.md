@@ -2,6 +2,8 @@
 
 This tool provides the ability to apply translations to server sent data for Blue Protocol.
 
+This tool is built using .NET 7 and may require you to install that before it can run. Download the latest [.NET Desktop Runtime for x64 here](https://dotnet.microsoft.com/en-us/download/dotnet/7.0).
+
 Two methods of localization can be used: Complete Replacement or Delta Replacement
 
 ## Complete Replacement
