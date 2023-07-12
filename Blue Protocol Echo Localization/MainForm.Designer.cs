@@ -1,6 +1,6 @@
-﻿namespace BlueProtocolEcho
+﻿namespace Blue_Protocol_Echo_Localization
 {
-    partial class Form1
+    partial class MainForm
     {
         /// <summary>
         ///  Required designer variable.
@@ -28,7 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             OverrideDataDirectoryLabel = new Label();
             OverrideDataDirectoryTB = new TextBox();
             OverrideDataDirectoryBrowseBtn = new Button();
@@ -325,7 +325,7 @@
             SaveIncomingDataLabel.Text = "Save Incoming Data To File :";
             SaveIncomingDataLabel.TextAlign = ContentAlignment.MiddleLeft;
             // 
-            // Form1
+            // MainForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
@@ -335,10 +335,10 @@
             FormBorderStyle = FormBorderStyle.Fixed3D;
             Icon = (Icon)resources.GetObject("$this.Icon");
             MaximizeBox = false;
-            Name = "Form1";
+            Name = "MainForm";
             StartPosition = FormStartPosition.CenterScreen;
-            Text = "Echo - Blue Protocol Server Data Translator";
-            Load += Form1_Load;
+            Text = "Echo Localization - Blue Protocol Server Data Translator";
+            Load += MainForm_Load;
             DebugLogGroupBox.ResumeLayout(false);
             DebugLogGroupBox.PerformLayout();
             SettingsGroupBox.ResumeLayout(false);

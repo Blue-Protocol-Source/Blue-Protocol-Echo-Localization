@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace BlueProtocolEcho
+namespace Blue_Protocol_Echo_Localization
 {
     public static class DarkTheme
     {

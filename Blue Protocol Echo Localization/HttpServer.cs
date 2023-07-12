@@ -11,11 +11,11 @@ using System.Text.Json.Serialization;
 using System.Text.Unicode;
 using System.Threading.Tasks;
 using System.Xml.Linq;
-using static BlueProtocolEcho.LocalizationFileLayout;
+using static Blue_Protocol_Echo_Localization.LocalizationFileLayout;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
-namespace BlueProtocolEcho
+namespace Blue_Protocol_Echo_Localization
 {
     public class HttpServer
     {
@@ -39,7 +39,7 @@ namespace BlueProtocolEcho
 
         public void Init(Config cfg)
         {
-            Cfg         = cfg;
+            Cfg = cfg;
             HttpHandler = new HttpListener();
             HttpHandler.Prefixes.Add($"http://localhost:{Cfg.Port}/");
             HttpHandler.Start();
@@ -61,7 +61,7 @@ namespace BlueProtocolEcho
             while (true)
             {
                 var context = await HttpHandler.GetContextAsync();
-                var req     = context.Request;
+                var req = context.Request;
 
                 var headers = new Dictionary<string, string>(req.Headers.Count);
                 foreach (var key in req.Headers.AllKeys)
@@ -141,10 +141,10 @@ namespace BlueProtocolEcho
         {
             var reqMsg = new HttpRequestMessage
             {
-                Method     = new HttpMethod(method),
+                Method = new HttpMethod(method),
                 RequestUri = new Uri($"{Cfg.MasterDataURL}{uri.PathAndQuery}"),
-                Headers    = { },
-                Content    = new ByteArrayContent(reqData)
+                Headers = { },
+                Content = new ByteArrayContent(reqData)
             };
 
             var excludeHeaders = new string[] { "Content-Length", "Content-Type", "Host", "Connection" };
@@ -233,13 +233,13 @@ namespace BlueProtocolEcho
             }
 
             var pathVersioned = Path.Combine(Cfg.SaveDataDir, resp.RequestMessage.RequestUri.AbsolutePath.TrimStart('/', '\\'), resp.Headers.Date.Value.ToString("yyyy_MM_dd-HH_mm_ss"), $"{Path.GetFileName(resp.RequestMessage.RequestUri.AbsolutePath)}.json");
-            
+
             // Only save files that don't already exist for this version
             if (!File.Exists(pathVersioned))
             {
                 SaveData(pathVersioned, resp);
             }
-            
+
             bool saveLatest = true;
             if (saveLatest)
             {
@@ -285,9 +285,9 @@ namespace BlueProtocolEcho
                 return "";
             }
 
-            var iv        = Convert.FromBase64String(iv_header.Value.FirstOrDefault());
-            var data      = resp.Content.ReadAsByteArrayAsync().Result;
-            var dataStr   = Encoding.UTF8.GetString(data);
+            var iv = Convert.FromBase64String(iv_header.Value.FirstOrDefault());
+            var data = resp.Content.ReadAsByteArrayAsync().Result;
+            var dataStr = Encoding.UTF8.GetString(data);
             var decrypted = AES.Decrypt(Convert.FromBase64String(dataStr), Convert.FromHexString(Cfg.AESKey), iv);
 
             return decrypted;

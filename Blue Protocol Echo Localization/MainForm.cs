@@ -1,15 +1,15 @@
 using System.Net;
 using System.Runtime.InteropServices;
 
-namespace BlueProtocolEcho
+namespace Blue_Protocol_Echo_Localization
 {
-    public partial class Form1 : Form
+    public partial class MainForm : Form
     {
         string TitleText = "";
         public HttpServer HttpServ;
         public Config Cfg = new Config();
 
-        public Form1()
+        public MainForm()
         {
             InitializeComponent();
 
@@ -19,7 +19,7 @@ namespace BlueProtocolEcho
             HttpServ = new HttpServer();
         }
 
-        private void Form1_Load(object sender, EventArgs e)
+        private void MainForm_Load(object sender, EventArgs e)
         {
             this.ForeColor = Color.DarkGray;
             this.BackColor = Color.FromArgb(255, 30, 30, 30);

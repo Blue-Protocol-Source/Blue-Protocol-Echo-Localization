@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BlueProtocolEcho
+namespace Blue_Protocol_Echo_Localization
 {
     internal class TextBoxWriter : TextWriter
     {
