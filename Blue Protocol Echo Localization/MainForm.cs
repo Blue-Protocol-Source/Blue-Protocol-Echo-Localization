@@ -27,6 +27,24 @@ namespace Blue_Protocol_Echo_Localization
             this.BackColor = Color.FromArgb(255, 30, 30, 30);
             DarkTheme.ApplyTheme_Dark(this);
 
+            // TODO: Load from a configuration file before this point
+            // The following are fallback default values if no previous config exists
+
+            if (Cfg.OverrideDir == "" && Path.Exists("Overrides"))
+            {
+                OverrideDataDirectoryTB.Text = "Overrides";
+            }
+
+            if (Cfg.SaveDataDir == "" && Path.Exists("ServerData"))
+            {
+                SaveDataDirectoryTB.Text = "ServerData";
+            }
+
+            if (Cfg.AESKey == "" && File.Exists("AESKey.txt"))
+            {
+                AESKeyTB.Text = File.ReadAllText("AESKey.txt").Trim();
+            }
+
             //ResetLocalizationOptions();
             LoadLocalizationOptions();
             SetSelectedLocalization(Cfg.LocalizationStr ?? "en");
