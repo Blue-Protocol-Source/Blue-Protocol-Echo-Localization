@@ -147,7 +147,7 @@ namespace Blue_Protocol_Echo_Localization
                 return;
             }
 
-            Console.Out.WriteLine($"ERROR: masterData was null for [{uri}]!!!");
+            Console.Out.WriteLine($"ERROR: masterData was null for [{uri}] !!!");
         }
 
         private async Task<HttpResponseMessage> ForwardRequest(Dictionary<string, string> headers, Uri uri, byte[] reqData, string method)
@@ -185,14 +185,20 @@ namespace Blue_Protocol_Echo_Localization
                 else if (method == "POST")
                 {
                     SaveResponsePostData(response);
-                    SavePostRequestData(reqData, response.RequestMessage.RequestUri.AbsolutePath, response.Headers.Date.Value);
+                    SaveRequestPostData(reqData, response.RequestMessage.RequestUri.AbsolutePath, response.Headers.Date.Value);
                 }
 
                 return response;
             }
             catch (Exception ex)
             {
-                Debug.WriteLine(ex);
+                StringBuilder headerString = new StringBuilder();
+                headerString.AppendLine($"Encountered Error Request [{uri}]\n{ex.ToString()}");
+                foreach (var header in headers)
+                {
+                    headerString.AppendLine($"{header.Key}: {header.Value}");
+                }
+                Console.Out.WriteLine(headerString);
             }
 
             return null;
@@ -255,53 +261,18 @@ namespace Blue_Protocol_Echo_Localization
             // Only save files that don't already exist for this version
             if (!File.Exists(pathVersioned))
             {
-                SavePostData(pathVersioned, resp);
+                SaveData(pathVersioned, resp);
             }
 
             bool saveLatest = true;
             if (saveLatest)
             {
                 var pathLatest = Path.Combine(Cfg.SaveDataDir, "POST", "latest", $"{resp.RequestMessage.RequestUri.AbsolutePath.TrimStart('/', '\\')}.json");
-                SavePostData(pathLatest, resp);
+                SaveData(pathLatest, resp);
             }
         }
 
-        private void SavePostData(string path, HttpResponseMessage resp)
-        {
-            Directory.CreateDirectory(Path.GetDirectoryName(path));
-
-            if (Cfg.SaveDecryptedData)
-            {
-                SaveDecryptedPostData(path, resp);
-                Console.Out.WriteLine($"Saved decrypted data to {path.Replace(Cfg.SaveDataDir, "")}");
-            }
-            else
-            {
-                string encryptedFilePath = string.Concat(Path.ChangeExtension(path, ""), "_enc.bin");
-                File.WriteAllText(encryptedFilePath, Encoding.UTF8.GetString(resp.Content.ReadAsByteArrayAsync().Result));
-                Console.Out.WriteLine($"Saved encrypted data to {encryptedFilePath.Replace(Cfg.SaveDataDir, "")}");
-            }
-        }
-
-        private void SaveDecryptedPostData(string path, HttpResponseMessage resp)
-        {
-            var data = DecryptPostResp(resp);
-            if (data.StartsWith('[') || data.StartsWith('{'))
-            {
-                var niceJson = JsonSerializer.Serialize(JsonDocument.Parse(data), new JsonSerializerOptions
-                {
-                    WriteIndented = true,
-                    Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-                });
-                File.WriteAllText(path, niceJson);
-            }
-            else
-            {
-                File.WriteAllText(path, data);
-            }
-        }
-
-        private void SavePostRequestData(byte[] reqData, string requestUriAbsolutePath, DateTimeOffset DateHeader)
+        private void SaveRequestPostData(byte[] reqData, string requestUriAbsolutePath, DateTimeOffset DateHeader)
         {
             if (!Cfg.SaveServerData)
             {
@@ -326,23 +297,6 @@ namespace Blue_Protocol_Echo_Localization
                 File.WriteAllText(pathLatest, Encoding.UTF8.GetString(reqData));
                 Console.Out.WriteLine($"Saved post request data to {pathVersioned.Replace(Cfg.SaveDataDir, "")}");
             }
-        }
-
-        private string DecryptPostResp(HttpResponseMessage resp)
-        {
-            var iv_header = resp.Headers.FirstOrDefault(header => header.Key.EndsWith("x-sb-iv", StringComparison.CurrentCultureIgnoreCase));
-
-            if (iv_header.Key == null)
-            {
-                return Encoding.UTF8.GetString(resp.Content.ReadAsByteArrayAsync().Result);
-            }
-
-            var iv = Convert.FromBase64String(iv_header.Value.FirstOrDefault());
-            var data = resp.Content.ReadAsByteArrayAsync().Result;
-            var dataStr = Encoding.UTF8.GetString(data);
-            var decrypted = AES.Decrypt(Convert.FromBase64String(dataStr), Convert.FromHexString(Cfg.AESKey), iv);
-
-            return decrypted;
         }
 
         private void SaveResponseData(HttpResponseMessage resp)
@@ -379,8 +333,9 @@ namespace Blue_Protocol_Echo_Localization
             }
             else
             {
-                string encryptedFilePath = string.Concat(Path.ChangeExtension(path, ""), "_enc.bin");
-                File.WriteAllText(encryptedFilePath, Encoding.UTF8.GetString(resp.Content.ReadAsByteArrayAsync().Result));
+                string encryptedFilePath = string.Concat(Path.ChangeExtension(path, "").TrimEnd('.'), "_enc.bin");
+                var iv_header = GetRespHeaderIV(resp);
+                File.WriteAllText(encryptedFilePath, $"IV:{(iv_header.Key != null ? iv_header.Value.FirstOrDefault() : "")}\n{Encoding.UTF8.GetString(resp.Content.ReadAsByteArrayAsync().Result)}");
                 Console.Out.WriteLine($"Saved encrypted data to {encryptedFilePath.Replace(Cfg.SaveDataDir, "")}");
             }
         }
@@ -388,21 +343,28 @@ namespace Blue_Protocol_Echo_Localization
         private void SaveDecryptedData(string path, HttpResponseMessage resp)
         {
             var data = DecryptResp(resp);
-            var niceJson = JsonSerializer.Serialize(JsonDocument.Parse(data), new JsonSerializerOptions
+            if (data.StartsWith('[') || data.StartsWith('{'))
             {
-                WriteIndented = true,
-                Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-            });
-            File.WriteAllText(path, niceJson);
+                var niceJson = JsonSerializer.Serialize(JsonDocument.Parse(data), new JsonSerializerOptions
+                {
+                    WriteIndented = true,
+                    Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+                });
+                File.WriteAllText(path, niceJson);
+            }
+            else
+            {
+                File.WriteAllText(path, data);
+            }
         }
 
         private string DecryptResp(HttpResponseMessage resp)
         {
-            var iv_header = resp.Headers.FirstOrDefault(header => header.Key.EndsWith("x-sb-iv", StringComparison.CurrentCultureIgnoreCase));
+            var iv_header = GetRespHeaderIV(resp);
 
             if (iv_header.Key == null)
             {
-                return "";
+                return Encoding.UTF8.GetString(resp.Content.ReadAsByteArrayAsync().Result);
             }
 
             var iv = Convert.FromBase64String(iv_header.Value.FirstOrDefault());
@@ -411,6 +373,11 @@ namespace Blue_Protocol_Echo_Localization
             var decrypted = AES.Decrypt(Convert.FromBase64String(dataStr), Convert.FromHexString(Cfg.AESKey), iv);
 
             return decrypted;
+        }
+
+        private KeyValuePair<string, IEnumerable<string>> GetRespHeaderIV(HttpResponseMessage resp)
+        {
+            return resp.Headers.FirstOrDefault(header => header.Key.EndsWith("x-sb-iv", StringComparison.CurrentCultureIgnoreCase));
         }
 
         private void PrintRequest(Dictionary<string, string> headers, Uri uri, ReadOnlySpan<byte> reqData)
