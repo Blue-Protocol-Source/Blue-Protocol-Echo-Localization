@@ -32,12 +32,12 @@ namespace Blue_Protocol_Echo_Localization
 
             if (Cfg.OverrideDir == "" && Path.Exists("Overrides"))
             {
-                OverrideDataDirectoryTB.Text = "Overrides";
+                OverrideDataDirectoryTB.Text = Path.GetFullPath("Overrides");
             }
 
             if (Cfg.SaveDataDir == "" && Path.Exists("ServerData"))
             {
-                SaveDataDirectoryTB.Text = "ServerData";
+                SaveDataDirectoryTB.Text = Path.GetFullPath("ServerData");
             }
 
             if (Cfg.AESKey == "" && File.Exists("AESKey.txt"))
@@ -45,7 +45,7 @@ namespace Blue_Protocol_Echo_Localization
                 AESKeyTB.Text = File.ReadAllText("AESKey.txt").Trim();
             }
 
-            //ResetLocalizationOptions();
+            ResetLocalizationOptions();
             LoadLocalizationOptions();
             SetSelectedLocalization(Cfg.LocalizationStr ?? "en");
 

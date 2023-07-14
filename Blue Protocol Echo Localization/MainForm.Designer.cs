@@ -213,18 +213,18 @@
             // 
             // IPLbl
             // 
-            IPLbl.AutoSize = true;
-            IPLbl.Location = new Point(557, 198);
+            IPLbl.Location = new Point(557, 194);
             IPLbl.Name = "IPLbl";
-            IPLbl.Size = new Size(58, 15);
+            IPLbl.Size = new Size(58, 24);
             IPLbl.TabIndex = 16;
             IPLbl.Text = "Unknown";
+            IPLbl.TextAlign = ContentAlignment.MiddleLeft;
             // 
             // CheckIPbtn
             // 
             CheckIPbtn.Location = new Point(461, 194);
             CheckIPbtn.Name = "CheckIPbtn";
-            CheckIPbtn.Size = new Size(90, 23);
+            CheckIPbtn.Size = new Size(90, 24);
             CheckIPbtn.TabIndex = 15;
             CheckIPbtn.Text = "Check Region";
             CheckIPbtn.UseVisualStyleBackColor = true;
@@ -232,9 +232,9 @@
             // 
             // ApplySettingsBtn
             // 
-            ApplySettingsBtn.Location = new Point(461, 157);
+            ApplySettingsBtn.Location = new Point(461, 156);
             ApplySettingsBtn.Name = "ApplySettingsBtn";
-            ApplySettingsBtn.Size = new Size(153, 23);
+            ApplySettingsBtn.Size = new Size(153, 24);
             ApplySettingsBtn.TabIndex = 14;
             ApplySettingsBtn.Text = "[DEBUG] Apply Settings";
             ApplySettingsBtn.UseVisualStyleBackColor = true;

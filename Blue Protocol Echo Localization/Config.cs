@@ -13,7 +13,7 @@ namespace Blue_Protocol_Echo_Localization
         public string MasterDataURL { get; set; } = "https://datastore-main.aws.blue-protocol.com:7701";
         public string OverrideDir { get; set; } = "";
         public bool SaveServerData { get; set; } = true;
-        public string SaveDataDir { get; set; } = "DecryptedData";
+        public string SaveDataDir { get; set; } = "";
         public string LocalizationStr { get; set; } = "en";
         public string AESKey { get; set; } = "";
         public bool SaveDecryptedData { get; set; } = true;
